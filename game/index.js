@@ -17,7 +17,7 @@ const bad = (state, action) => {
   const validCoords = [0, 1, 2];
   if (validCoords.indexOf(action.position[0]) < 0 || validCoords.indexOf(action.position[1]) < 0) {
     error = `
-      Sorry, that is not a valid position. 
+      Sorry, that is not a valid position.
       Please enter two numbers between 0 and 2, separated by a comma.
     `;
   }
@@ -82,7 +82,7 @@ export function winner(board) {
 }
 
 function turnReducer(turn = 'X', action) {
-  if (action.type === MOVE) return action.player === 'X' ? 'O' : 'X';
+  if (action.type === MOVE) return turn === 'X' ? 'O' : 'X';
   return turn;
 }
 
@@ -95,7 +95,7 @@ export default function reducer(state = initialState, action) {
   if (action.type === MOVE) {
     const error = bad(state, action);
     if (error !== null) {
-      const newState = Object.assign({}, state, {error, turn: action.player});
+      const newState = Object.assign({}, state, {error});
       return newState;
     }
     const updatedBoard = boardReducer(state.board, action);
