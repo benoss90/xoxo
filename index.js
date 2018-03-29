@@ -48,7 +48,7 @@ const game = createStore(gameReducer)
 
 game.subscribe(printBoard)
 game.subscribe(getInput('X'))
-game.subscribe(getInput(ai))
+game.subscribe(ai('O'))
 game.subscribe(checkForWinner)
 
 // game.subscribe(() => {
