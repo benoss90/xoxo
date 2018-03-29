@@ -35,6 +35,7 @@ const score = (game, move) => {
     const best = -Math.max(scoresOfPossibleMoves)
     return best
   }
+  return -1
 }
 
 /**

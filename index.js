@@ -1,5 +1,4 @@
 import inquirer from 'inquirer'
-import { ai } from './game/ai'
 import gameReducer, { move } from './game'
 import { createStore } from 'redux'
 
@@ -43,6 +42,17 @@ const checkForWinner = () => {
 }
 // Create the store
 const game = createStore(gameReducer)
+
+import play from './game/ai'
+
+const ai = player => () => {
+	const state = game.getState()
+	if (state.turn !== player) return
+	if (state.winner) return
+	const move = play(game.getState())
+	console.log(`🤖 ${player} moves to ${move.coord}`)
+	game.dispatch(move)
+}
 
 // Debug: Print the state
 
