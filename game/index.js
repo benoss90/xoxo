@@ -98,14 +98,14 @@ function boardReducer(board = Map(), action) {
 }
 
 export default function reducer(state = initialState, action) {
-	if (action.type === MOVE) {
+		if (action.type === MOVE) {
 		const error = bad(state, action)
-		if (error !== null) {
+			if (error !== null) {
 			const newState = Object.assign({}, state, { error })
 			return newState
 		}
 		const updatedBoard = boardReducer(state.board, action)
-		return {
+			return {
 			board: updatedBoard,
 			turn: turnReducer(state.turn, action),
 			winner: winner(updatedBoard),

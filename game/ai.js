@@ -5,16 +5,16 @@ import reducer, {move, bad} from '.'
  *
  * Return an array of actions which are valid moves from the given state.
  */
-export const moves = game => {
-  const arr = [];
+const COORDS = [
+  [0, 0], [0, 1], [0, 2],
+  [1, 0], [1, 1], [1, 2],
+  [2, 0], [2, 1], [2, 2]
+]
 
-  for(let i = 0; i < 3; i++) {
-    for (let j = 0; j < 3; j++) {
-      if(!bad())
-    }
-  }
-  return arr;
-} // TODO
+export const moves = game => moves[game.turn].filter(move => !bad(game, move))
+
+moves.X = COORDS.map(coord => move('X', coord))
+moves.O = COORDS.map(coord => move('O', coord))
 
 /**
  * score(game: State, move: Action) -> Number
@@ -26,7 +26,15 @@ export const moves = game => {
  * is state from which we can only lose.
  */
 const score = (game, move) => {
-  // TODO
+  const future = reducer(game, move)
+  if(future.winner === move.player) return 1
+  if(future.winner === 'draw') return 0
+  if(future.winner === null) {
+    const possibleMoves = moves(future)
+    const scoresOfPossibleMoves = possibleMoves.map(move => score(move))
+    const best = -Math.max(scoresOfPossibleMoves)
+    return best
+  }
 }
 
 /**
@@ -34,4 +42,8 @@ const score = (game, move) => {
  *
  * Return the best action for the current player.
  */
-export default state => undefined // TODO
+export default state => moves(state)
+  .map(move => Object.assign({}, move, {
+    score: score(state, move)
+  }))
+  .sort((a, b) => b.score - a.score)[0]
