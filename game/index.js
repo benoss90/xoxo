@@ -1,58 +1,61 @@
 import { Map } from 'immutable'
 
-const initialState = {
-	board: Map(),
-	turn: 'X',
-	winner: null,
-	error: null
+export const MOVE = 'MOVE'
+
+/**
+ * move(player: 'X'|'O', coord: [row: 0...2, col: 0...2]) -> Action
+ *
+ * Return a move action.
+ */
+export const move = (player, coord) => ({
+	type: MOVE,
+	player,
+	coord
+})
+
+/**
+ * turn(current: 'X' | 'O', action) -> 'O' | 'X'
+ *
+ * Turn reducer. If action is a MOVE, flips the current turn. Otherwise,
+ * returns the current state.
+ */
+function turn(current = 'X', action) {
+	if (action.type === MOVE) return current === 'X' ? 'O' : 'X'
+	return current
 }
 
-const MOVE = 'MOVE'
-
-const bad = (state, action) => {
-	let error
-	if (action.player !== state.turn) {
-		error = `Hey ${action.player}, wait your turn!`
-	}
-	const validCoords = [0, 1, 2]
-	if (
-		validCoords.indexOf(action.position[0]) < 0 ||
-		validCoords.indexOf(action.position[1]) < 0
-	) {
-		error = `
-      Sorry, that is not a valid position.
-      Please enter two numbers between 0 and 2, separated by a comma.
-    `
-	}
-	const { board } = state
-	if (board.hasIn(action.position)) {
-		error = `Sorry, that place is already taken.`
-	}
-	if (error) {
-		console.log(error)
-		return error
-	}
-	return null
+/**
+ * board(board: Board, action) -> Board
+ *
+ * If action is a MOVE, returns a board with that move made.
+ * Otherwise, returns the board unchanged.
+ */
+function board(board = Map(), { type, coord, player }) {
+	if (type === MOVE) return board.setIn(coord, player)
+	return board
 }
 
-export const move = (player, position) => ({ type: MOVE, position, player })
-
-const streak = (board, firstCoord, secondCoord, thirdCoord) => {
-	const valueAtFirst = board.getIn(firstCoord)
-	const valueAtSecond = board.getIn(secondCoord)
-	const valueAtThird = board.getIn(thirdCoord)
-
-	if (
-		valueAtFirst !== undefined &&
-		valueAtFirst === valueAtSecond &&
-		valueAtSecond === valueAtThird
-	) {
-		return valueAtFirst
-	} else {
-		return undefined
+/**
+ * streak(board: Board, first: Coord, ...rest: Coord) -> String?
+ *
+ * If a player has taken all the specified coordinates, returns
+ * that player. Otherwise, returns null.
+ */
+function streak(board, first, ...rest) {
+	const player = board.getIn(first)
+	if (!player) return null
+	for (let c of rest) {
+		if (board.getIn(c) !== player) return null
 	}
+	return player
 }
 
+/**
+ * winner(board: Board) -> String?
+ *
+ * Returns a winner ('X' or 'O') if there is one, 'draw' if it's a draw,
+ * and null if the game isn't over yet.
+ */
 export function winner(board) {
 	let diagDown = streak(board, [0, 0], [1, 1], [2, 2])
 	if (diagDown) return diagDown
@@ -92,26 +95,39 @@ function turnReducer(turn = 'X', action) {
 	return turn
 }
 
-function boardReducer(board = Map(), action) {
-	if (action.type === MOVE) return board.setIn(action.position, action.player)
-	return board
+/**
+ * bad(State, Action) -> String?
+ *
+ * Returns null if the action is valid from the given state. Otherwise,
+ * returns a string describing the error.
+ */
+export const bad = ({ turn, board }, { type, player, coord }) => {
+	if (type !== MOVE) return
+	if (player !== turn) return `It's not ${player}'s turn`
+	if (coord.length !== 2) return `Specify row,column`
+	const [row, col] = coord
+	if (!Number.isInteger(row) || row < 0 || row > 2)
+		return `Invalid row (must be 0-2): ${row}`
+	if (!Number.isInteger(col) || col < 0 || col > 2)
+		return `Invalid column (must be 0-2): ${col}`
+	if (board.hasIn(coord)) return `Square ${coord} is already taken`
 }
 
-export default function reducer(state = initialState, action) {
-		if (action.type === MOVE) {
-		const error = bad(state, action)
-			if (error !== null) {
-			const newState = Object.assign({}, state, { error })
-			return newState
-		}
-		const updatedBoard = boardReducer(state.board, action)
-			return {
-			board: updatedBoard,
-			turn: turnReducer(state.turn, action),
-			winner: winner(updatedBoard),
-			error: null
-		}
-	} else {
-		return state
+/**
+ * reducer(game: State, action: Action) -> State
+ *
+ * Takes a state and action and returns the next state.
+ *
+ * If the action is invalid, returns a copy of the current
+ * game state with an `error` property set.
+ */
+export default function reducer(game = {}, action) {
+	const error = bad(game, action)
+	if (error) return Object.assign({}, game, { error })
+	const nextBoard = board(game.board, action)
+	return {
+		winner: winner(nextBoard),
+		turn: turn(game.turn, action),
+		board: nextBoard
 	}
 }
